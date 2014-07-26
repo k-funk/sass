@@ -53,6 +53,42 @@ module Sass::Script::Tree
       node
     end
 
+    def to_ruby(environment)
+      ruby = "begin\n"
+      value1_var = environment.unique_ident
+      ruby << "#{value1_var} = #{@operand1.to_ruby(environment)}\n"
+
+      if @operator == :and
+        ruby << "#{value1_var}.to_bool ? #{@operand2.to_ruby(environment)} : #{value1_var}\nend"
+        return ruby
+      elsif @operator == :or
+        ruby << "#{value1_var}.to_bool ? #{value1_var} : #{@operand2.to_ruby(environment)}\nend"
+        return ruby
+      end
+
+      value2_var = environment.unique_ident
+      ruby << "#{value2_var} = #{@operand2.to_ruby(environment)}\n"
+
+      if @operator != :eq && @operator != :neq
+        ruby << <<-RUBY
+          if #{value1_var}.is_a?(Sass::Script::Value::Null) ||
+              #{value2_var}.is_a?(Sass::Script::Value::Null)
+            raise Sass::SyntaxError.new("Invalid null operation: \\"\#{#{value1_var}.inspect} " +
+              "#{@operator} \#{#{value2_var}.inspect}\\".")
+          end
+        RUBY
+      end
+
+      ruby << <<-RUBY.rstrip
+          #{value1_var}.#{@operator}(#{value2_var})
+        rescue NoMethodError => e
+          raise e unless e.name.to_s == #{@operator.to_s.dump}
+          raise Sass::SyntaxError.new("Undefined operation: \\"\#{#{value1_var}.inspect} " +
+            "#{@operator} \#{#{value2_var}.inspect}\\".")
+        end
+      RUBY
+    end
+
     protected
 
     # Evaluates the operation.

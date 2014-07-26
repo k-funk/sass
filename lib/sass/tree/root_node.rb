@@ -20,6 +20,10 @@ module Sass
         css_tree.css
       end
 
+      def to_ruby
+        Visitors::ToRuby.visit(self)
+      end
+
       # Runs the dynamic Sass code and computes the CSS for the tree, along with
       # the sourcemap.
       #

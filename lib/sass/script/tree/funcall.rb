@@ -112,6 +112,27 @@ module Sass::Script::Tree
       node
     end
 
+    def to_ruby(environment)
+      arg_names = []
+      ruby = "begin\n"
+      @args.each do |arg|
+        name = environment.unique_ident
+        arg_names << name
+        str << "#{name} = #{arg.to_ruby(environment)}\n"
+      end
+
+      fn_name = environment.ident_for_str(name, :fn)
+      str + <<-RUBY.rstrip
+          if defined?(#{fn_name})
+            #{fn_name}(#{arg_names.join(", ")})
+          else
+            Sass::Script::Value::String.new(#{(name + "(").dump} +
+              #{arg_names.map {|name| name + ".to_s"}.join(" + ")} + ")")
+          end
+        end
+      RUBY
+    end
+
     protected
 
     # Evaluates the function call.

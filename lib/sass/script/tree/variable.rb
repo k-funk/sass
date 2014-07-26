@@ -37,6 +37,24 @@ module Sass::Script::Tree
       dup
     end
 
+    def to_ruby(environment)
+      ruby = "begin\n"
+      name = environment.ident_for_str(name, :var)
+      unless environment.local_var?(name)
+        name = "@#{name}"
+        ruby << 'Sass::SyntaxError.new("Undefined variable: \"$#{self.name}\".") unless #{name}\n'
+      end
+      
+      <<-RUBY
+          if #{name}.is_a?(Sass::Script::Value::Number) && #{name}.original
+            #{name} = #{name}.dup
+            #{name}.original = nil
+          end
+          #{name}
+        end
+      RUBY
+    end
+
     protected
 
     # Evaluates the variable.

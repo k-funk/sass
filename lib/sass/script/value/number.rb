@@ -373,6 +373,11 @@ module Sass::Script::Value
       rv
     end
 
+    def to_sass
+      "::Sass::Script::Value::Number.new(" +
+        "#{value}, #{@numerator_units.inspect}, #{@denominator_units.inspect})"
+    end
+
     private
 
     # @private

@@ -40,5 +40,9 @@ module Sass::Script::Value
     def inspect
       'null'
     end
+
+    def to_ruby
+      "::Sass::Script::Value::Null::NULL"
+    end
   end
 end
